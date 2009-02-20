@@ -1,20 +1,4 @@
-(in-package :cl-user)
-
-#+pcall
-(require 'pcall)
-
-(defpackage :ray-trace
-  (:nicknames :rt)
-  (:use :common-lisp 
-	:vect-utils 
-	#+pcall
-	:pcall)
-  (:shadowing-import-from :vect-utils :+ :-)
-  (:shadow :trace)
-  (:export :trace
-	   :trace-to-file))
-
-(in-package :rt)
+(in-package :elray)
 
 ;;(declaim (optimize (safety 0) (speed 3)))
 
@@ -150,6 +134,11 @@ the object."
   `(when (> ,value ,max)
      (setf ,value ,max)))
 
+(defmacro not-obstructed-light (obs-list obj)
+  `(or (null ,obs-list)
+       (and (= (length ,obs-list) 1)
+	    (equal (first (first ,obs-list)) ,obj))))
+
 (defgeneric color-at (obj location))
 
 (defmethod color-at ((obj sphere) location)
@@ -183,11 +172,6 @@ the object."
 		     :blue blue
 		     :min-color (min-color (color obj))
 		     :max-color (max-color (color obj))))))
-
-(defmacro not-obstructed-light (obs-list obj)
-  `(or (null ,obs-list)
-       (and (= (length ,obs-list) 1)
-	    (equal (first (first ,obs-list)) ,obj))))
 
 (defmethod color-at ((obj plane) location)
   (let ((color 
