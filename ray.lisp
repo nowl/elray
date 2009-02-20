@@ -2,123 +2,6 @@
 
 ;;(declaim (optimize (safety 0) (speed 3)))
 
-(defmacro with-gensyms ((&rest vars) &body body)
-  `(let ,(loop for var in vars collect
-	      `(,var (gensym)))
-     ,@body))
-
-(defstruct camera 
-  resx
-  resy
-  location
-  looking-at
-  up-vector
-  image-dist
-  fov-x-min
-  fov-x-max 
-  fov-y-min
-  fov-y-max)
-
-(defclass scene-object ()
-  ((color        :initarg :color                      :reader color)
-   (ambience     :initarg :ambience                   :reader ambience)
-   (reflectivity :initarg :reflectivity :initform 0   :reader reflectivity)
-   (transparent  :initarg :transparent  :initform nil :reader transparent-p)
-   (ior          :initarg :ior          :initform 0   :reader ior)))
-
-(defclass sphere (scene-object)
-  ((center :initarg :center :reader center)
-   (radius :initarg :radius :reader radius)))
-
-(defclass plane (scene-object)
-  ((position      :initarg :position      :reader pos)
-   (normal-facing :initarg :normal-facing :reader normal)))
-
-(defmacro insert-sphere (x y z rad red green blue ambience)
-  `(make-instance 'sphere
-		  :center (make-vect :x ,x :y ,y :z ,z)
-		  :radius ,rad
-		  :color (make-instance 'color 
-					:red ,red :green ,green :blue ,blue
-					:min-color 0 :max-color 255)
-		  :ambience ,ambience
-		  :reflectivity 0.6))
-
-(defparameter *world* 
-  (list 
-   (insert-sphere -1.5 0.0 0.0 1.0 0 255 0 0.1)
-   (insert-sphere 1.5 1.5 0.0 1.0 0 0 255 0.1)
-   (insert-sphere 0.0 0.0 -1.5 1.0 255 0 0 0.1)
-   (make-instance 'plane
-		  :position (make-vect :x 0.0 :y -1.5 :z 0.0)
-		  :normal-facing (make-vect :x 0.0 :y 1.0 :z 0.0)
-		  :color (make-instance 'color
-					:red 0 :green 200 :blue 200
-					:min-color 0 :max-color 255)
-		  :ambience 0.1)))
-
-(defparameter *light* (list (make-vect :x 100.0 :y 200.0 :z 50.0)
-			    (make-instance 'color :red 255 :green 255 :blue 255 :min-color 0 :max-color 255)))
-
-(defparameter *color-black* (make-instance 'color :red 0 :green 0 :blue 0 :min-color 0 :max-color 255))
-
-(defparameter *maximum-reflection-depth* 10)
-
-(defparameter *camera*
-  (make-camera :resx 200
-	       :resy 200
-	       :location (make-vect :x 0.0 :y 2.0 :z 10.0)
-	       :looking-at (make-vect :x 0.0 :y 0.0 :z 0.0)
-	       :up-vector (make-vect :x 0.0 :y 1.0 :z 0.0)
-	       :image-dist 7.0
-	       :fov-x-min -2.0
-	       :fov-x-max 2.0
-	       :fov-y-min -2.0
-	       :fov-y-max 2.0))
-
-(defparameter *ambient-background-color* (make-instance 'color :red 0 :green 0 :blue 0 :min-color 0 :max-color 255))
-
-(defgeneric intersect (p1 p2 object))
-
-(defmethod intersect (p1 p2 (o sphere))
-  (let ((line (make-line-from-vects p1 p2)))
-    (let ((slope (line-slope line))
-	  (x0 (line-offset line))
-	  (c (center o))
-	  (r (radius o)))
-      (declare (single-float r))
-      (let* ((t1 (dot slope (- c x0)))
-	     (t2 (- 0 (dot (- c x0) (- c x0))))
-	     (inner (+ (sqr r) t2 (sqr t1))))
-	(declare (single-float t1 t2 inner))
-	(if (> inner 0)
-	    (let* ((d1 (+ t1 (sqrt inner)))
-		   (d2 (- t1 (sqrt inner)))
-		   (end1 (get-vect-at-time line d1))
-		   (end2 (get-vect-at-time line d2))
-		   (dist1 (distance p1 end1))
-		   (dist2 (distance p1 end2)))
-	      (declare (single-float d1 d2 dist1 dist2))
-	      (if (< (- dist1 dist2) 0)
-		  (list dist1 end1)
-		  (list dist2 end2)))
-	    nil)))))
-
-(defmethod intersect (p1 p2 (o plane))
-  "Equation of a plane is where N dot x = N dot location-on-plane."
-  (let* ((line (make-line-from-vects p1 p2))
-	 (slope (line-slope line))
-	 (x0 (line-offset line))
-	 (t1 (dot (normal o) slope)))
-    (when (/= t1 0)
-      (let* ((t2 (- (pos o) x0))
-	     (t3 (dot (normal o) t2))
-	     (time (/ t3 t1)))
-	(when (> time 0)
-	  (let* ((end (get-vect-at-time line time))
-		 (dist (distance p1 end)))
-	    (list dist end)))))))
-
 (defun sendray (p1 p2 depth)
   "This should return a list of objects and distances from vect p1 to
 the object."
@@ -215,46 +98,6 @@ the object."
 		     :min-color (min-color (color obj))
 		     :max-color (max-color (color obj))))))
 
-(defmacro dump-percentage (last-percent num div inc)
-  (with-gensyms (percent rounded-percent)
-    `(let ((,percent (round (* 100 (/ ,num ,div)))))
-       (when (> ,percent (+ ,last-percent ,inc))
-	 (let ((,rounded-percent (* (1+ (round ,percent ,inc)) ,inc)))
-	   (format t "~a%..~%" ,rounded-percent)
-	   (setf ,last-percent ,rounded-percent))))))
-
-(defun make-image-plane ()
-  (format t "building image plane..~%")
-  (let ((image-plane-points (make-array (list (camera-resy *camera*)
-					      (camera-resx *camera*))))
-	(plane-center (+ (mult-by-scalar (norm-vect (- (camera-looking-at *camera*)
-						       (camera-location *camera*)))
-					 (camera-image-dist *camera*))
-			 (camera-location *camera*)))
-	(fovxmin (camera-fov-x-min *camera*))
-	(fovxmax (camera-fov-x-max *camera*))
-	(fovymin (camera-fov-y-min *camera*))
-	(fovymax (camera-fov-y-max *camera*)))
-    (declare (single-float fovxmax fovxmax fovymin fovymax))
-    (let*
-	((w (norm-vect (- (camera-looking-at *camera*) 
-			  (camera-location *camera*))))
-	 (u (cross w (camera-up-vector *camera*)))
-	 (v (cross w u))
-	 (last-percent 0))
-      (loop for map-y below (camera-resy *camera*) do
-	   (loop for map-x below (camera-resx *camera*) do
-		(let ()
-		  (declare ((signed-byte 16) map-y map-x))
-		  (let* ((y-offset (+ (* (/ (- fovymax fovymin) (camera-resy *camera*)) map-y) fovymin))
-			 (x-offset (+ (* (/ (- fovxmax fovxmin) (camera-resx *camera*)) map-x) fovxmin))
-			 (total-offset-vect (+ (mult-by-scalar u x-offset)
-					       (mult-by-scalar v y-offset))))
-		    (setf (aref image-plane-points map-y map-x)
-			  (+ plane-center total-offset-vect))))
-		(dump-percentage last-percent map-y (camera-resy *camera*) 10))))
-    image-plane-points))
-
 (defun get-closest (obj-dist-loc-list &key (exclude nil))
   (let ((closest nil))
     (loop for odl in obj-dist-loc-list do
@@ -324,24 +167,6 @@ the object."
 					
 
     image-plane))
-
-(defun write-ppm-header (stream max-color-val)
-  (let ((columns (camera-resx *camera*))
-	(rows (camera-resy *camera*)))
-    (format stream "P3~%~a ~a~%~a~%" columns rows max-color-val)))
-
-(defun write-ppm-color-value (stream color)
-  (let ((red (round (red color)))
-	(green (round (green color)))
-	(blue (round (blue color))))
-    (format stream "~a ~a ~a~%" red green blue)))
-
-(defun write-ppm-image (stream color-map)
-  (let ((last-percent 0))
-    (loop for row below (camera-resy *camera*) do
-	 (loop for col below (camera-resx *camera*) do
-	      (write-ppm-color-value stream (aref color-map row col)))
-	 (dump-percentage last-percent row (camera-resy *camera*) 10))))
 
 (defun trace-to-file (filename)
   (with-open-file (out (pathname filename) :direction :output :if-exists :supersede)
