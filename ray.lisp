@@ -24,79 +24,80 @@ the object."
 
 (defgeneric color-at (obj location))
 
+(defvar *final-color* *color-black*)
+(defmethod color-at :around ((obj scene-object) location)
+  (setf *final-color* *color-black*)
+
+  ;; this will call more specific methods to add in the color
+  ;; components to *final-color*
+  (call-next-method)
+
+  (let ((red (red *final-color*))
+	(green (green *final-color*))
+	(blue (blue *final-color*)))
+    (limit red 255)
+    (limit green 255)
+    (limit blue 255)
+    (make-instance 'color
+		   :red red
+		   :green green
+		   :blue blue
+		   :min-color (min-color (color obj))
+		   :max-color (max-color (color obj)))))
+
+(defmacro add-final-color-component! (&body body)
+  ;; body must be forms returning a color within an implicit progn
+  `(setf *final-color* (+ *final-color* (progn ,@body))))
+  
+(defmethod color-at ((obj scene-object) location)
+  ;; ambient color
+  (add-final-color-component!
+    (mult-by-scalar (color obj) (ambience obj))))
+
+(defmacro diffuse-color-from-norm (diffuse-amount)
+  "Pass in a form that returns a number between 0 and 1, 1 being the
+directly in line with the light source, 0 being perpendicular. It will
+be evaluating in the context of this macro which handles finding any
+light obstructions and returns the color component from the diffuse
+lighting."
+  (with-gensyms (light-obstructions d)
+    `(let ((,light-obstructions (sendray location (first *light*)
+					 (1- *maximum-reflection-depth*))))
+       (if (not-obstructed-light ,light-obstructions obj)
+	   (let ((,d ,diffuse-amount))
+	     (if (> ,d 0)
+		 (mult-by-scalar (color obj) ,d)
+		 *color-black*))
+	   *color-black*))))
+
 (defmethod color-at ((obj sphere) location)
-  (let ((color 
-	 (+
-		  
-	  ;; diffuse color
-	  (let ((light-obstructions (sendray location (first *light*) (1- *maximum-reflection-depth*))))
-	    (if (not-obstructed-light light-obstructions obj)
-		(let ((v1 (norm-vect (- location (first *light*))))
-		      (v2 (norm-vect (- (center obj) location))))
-		  (let ((d (dot v1 v2)))
-		    (if (> d 0)
-			(mult-by-scalar (color obj) d)
-			(make-instance 'color :red 0 :green 0 :blue 0 
-				       :min-color (min-color (color obj))
-				       :max-color (max-color (color obj))))))
-		*color-black*))
-		  
-	  ;; ambient color
-	  (mult-by-scalar (color obj) (ambience obj)))))
-    (let ((red (red color))
-	  (green (green color))
-	  (blue (blue color)))
-      (limit red 255)
-      (limit green 255)
-      (limit blue 255)
-      (make-instance 'color
-		     :red red
-		     :green green
-		     :blue blue
-		     :min-color (min-color (color obj))
-		     :max-color (max-color (color obj))))))
+  ;; diffuse color
+  (add-final-color-component!
+    (diffuse-color-from-norm 
+     (let ((v1 (norm-vect (- location (first *light*))))
+	   (v2 (norm-vect (- (center obj) location))))
+       (dot v1 v2))))
 
+  (call-next-method))
+	 
 (defmethod color-at ((obj plane) location)
-  (let ((color 
-	 (+
+  ;; diffuse color
+  (add-final-color-component!
+    (diffuse-color-from-norm
+     (let ((v (norm-vect (- (first *light*) location))))
+       (dot v (normal obj)))))
 
-	  ;; diffuse color
-	  (let ((light-obstructions (sendray location (first *light*) (1- *maximum-reflection-depth*))))
-	    ;;(if (and (consp non-obstructed-light) (first non-obstructed-light))
-	    (if (not-obstructed-light light-obstructions obj)
-		(let ((v (norm-vect (- (first *light*) location))))
-		  (let ((d (dot v (normal obj))))
-		    (if (> d 0)
-			(mult-by-scalar (color obj) d)
-			(make-instance 'color :red 0 :green 0 :blue 0 
-				       :min-color (min-color (color obj))
-				       :max-color (max-color (color obj))))))
-		*color-black*))
+  ;; reflective color
+  (add-final-color-component!
+    (let* ((reflection-point (vect-rotate (camera-location *camera*)
+					  (make-vect :x 0.0 :y 1.0 :z 0.0) 180.0 :angle-units :degrees))
+	   (color-reflective (first (ray->color location
+						reflection-point 
+						0
+						:exclude obj))))
+      (mult-by-scalar color-reflective (reflectivity obj))))
 
-	  ;; reflective color
-	  (let* ((reflection-point (vect-rotate (camera-location *camera*)
-						(make-vect :x 0.0 :y 1.0 :z 0.0) 180.0 :angle-units :degrees))
-		 (color-reflective (first (ray->color location
-						      reflection-point 
-						      0
-						      :exclude obj))))
-	    (mult-by-scalar color-reflective (reflectivity obj)))
-
-		  
-	  ;; ambient color
-	  (mult-by-scalar (color obj) (ambience obj)))))
-    (let ((red (red color))
-	  (green (green color))
-	  (blue (blue color)))
-      (limit red 255)
-      (limit green 255)
-      (limit blue 255)
-      (make-instance 'color
-		     :red red
-		     :green green
-		     :blue blue
-		     :min-color (min-color (color obj))
-		     :max-color (max-color (color obj))))))
+  (call-next-method))
 
 (defun get-closest (obj-dist-loc-list &key (exclude nil))
   (let ((closest nil))

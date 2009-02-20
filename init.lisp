@@ -2,5 +2,4 @@
 
 (asdf:oos 'asdf:load-op 'elray)
 
-(elray:trace-to-file "elray.pgm")
-
+(elray:trace-to-file "test.pgm")
