@@ -15,9 +15,9 @@
 (defclass scene-object ()
   ((color        :initarg :color                      :reader color)
    (ambience     :initarg :ambience                   :reader ambience)
-   (reflectivity :initarg :reflectivity :initform 0   :reader reflectivity)
+   (reflectivity :initarg :reflectivity :initform 0.0 :reader reflectivity)
    (transparent  :initarg :transparent  :initform nil :reader transparent-p)
-   (ior          :initarg :ior          :initform 0   :reader ior)))
+   (ior          :initarg :ior          :initform 0.0 :reader ior)))
 
 (defclass sphere (scene-object)
   ((center :initarg :center :reader center)
@@ -35,7 +35,7 @@
 					:red ,red :green ,green :blue ,blue
 					:min-color 0 :max-color 255)
 		  :ambience ,ambience
-		  :reflectivity 0.6))
+		  :reflectivity 0.8))
 
 
 (defgeneric scene-obj-norm (obj location)
@@ -47,5 +47,5 @@ vector."))
   (normal obj))
 
 (defmethod scene-obj-norm ((obj sphere) location)
-  (norm-vect (- (center obj) location)))
+  (norm-vect (- location (center obj))))
   

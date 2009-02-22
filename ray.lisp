@@ -22,50 +22,19 @@ the object."
        (and (= (length ,obs-list) 1)
 			(equal (first (first ,obs-list)) ,obj))))
 
-(defgeneric color-at (obj location))
+(defun ambient-color (obj)
+  (mult-by-scalar (color obj) (ambience obj)))
 
-(defvar *final-color* *color-black*)
-(defmethod color-at :around ((obj scene-object) location)
-  (setf *final-color* *color-black*)
-
-  ;; this will call more specific methods to add in the color
-  ;; components to *final-color*
-  (call-next-method)
-
-  ;; clamps the final color to the actual max values
-  (let ((red (red *final-color*))
-		(green (green *final-color*))
-		(blue (blue *final-color*)))
-    (limit red 255)
-    (limit green 255)
-    (limit blue 255)
-    (make-instance 'color
-				   :red red
-				   :green green
-				   :blue blue
-				   :min-color (min-color (color obj))
-				   :max-color (max-color (color obj)))))
-
-(defmacro add-final-color-component! (&body body)
-  ;; body must be forms returning a color within an implicit progn
-  `(setf *final-color* (+ *final-color* (progn ,@body))))
-
-(defmethod color-at ((obj scene-object) location)
-  ;; ambient color
-  (add-final-color-component!
-   (mult-by-scalar (color obj) (ambience obj)))
-  
-  ;; diffuse color
-  (add-final-color-component!
-	(let ((light-obstructions (sendray location (first *light*)
-									   (1- *maximum-reflection-depth*))))
-	  (if (not-obstructed-light light-obstructions obj)
-		  (let* ((v1 (norm-vect (- location (first *light*))))
-				 (d (dot v1 (scene-obj-norm obj location))))
-			 (if (> d 0)
-				 (mult-by-scalar (color obj) d)
-				 *color-black*))
-		  *color-black*))))
+(defun diffuse-color-at (obj location)
+  (let ((light-obstructions (sendray location (first *light*)
+									 (1- *maximum-reflection-depth*))))
+	(if (not-obstructed-light light-obstructions obj)
+		(let* ((v1 (norm-vect (- (first *light*) location)))
+			   (d (dot v1 (scene-obj-norm obj location))))
+		  (if (> d 0)
+			  (mult-by-scalar (color obj) d)
+			  *color-black*))
+		*color-black*)))
 
 (defun get-closest (obj-dist-loc-list &key (exclude nil))
   (let ((closest nil))
@@ -76,23 +45,45 @@ the object."
 		   (setf closest odl)))
     closest))
 
-(defun reflective-color-at (obj location p1 reflective-factor)
-  *color-black*)
+(defun reflective-color-at (obj location p1 reflective-factor current-depth)
+  (when (= reflective-factor 0.0)
+	*color-black*)
+  (let ((reflected-point (vect-rotate p1 
+									  (scene-obj-norm obj location) 
+									  180
+									  :angle-units :degrees)))
+	(mult-by-scalar (ray->color location reflected-point obj (1+ current-depth))
+					reflective-factor)))
 
 (defun ray->color (p1 p2 exclude-obj depth)
   ;; get closest object along the path excluding the current object
   (let ((obj-dist-loc (get-closest (sendray p1 p2 depth) 
 								   :exclude exclude-obj)))
     (if obj-dist-loc
-		(let ((diffuse-and-ambient-color 
-			   (color-at (first obj-dist-loc) (third obj-dist-loc)))
+		(let ((ambient-color (ambient-color (first obj-dist-loc)))
+			  (diffuse-color (diffuse-color-at (first obj-dist-loc) (third obj-dist-loc)))
 			  (reflective-color
 			   (reflective-color-at (first obj-dist-loc) 
 									(third obj-dist-loc)
 									p1
-									(when exclude-obj
-									  (reflectivity exclude-obj)))))
-		  (+ diffuse-and-ambient-color reflective-color))
+									(if exclude-obj
+										(reflectivity exclude-obj)
+										0.0)
+									depth)))
+		  (let ((final-color (+ reflective-color (+ ambient-color diffuse-color))))
+			;; clamps the final color to the actual max values
+			(let ((red (red final-color))
+				  (green (green final-color))
+				  (blue (blue final-color)))
+			  (limit red 255)
+			  (limit green 255)
+			  (limit blue 255)
+			  (make-instance 'color
+							 :red red
+							 :green green
+							 :blue blue
+							 :min-color 0
+							 :max-color 255))))
 		*ambient-background-color*)))
 
 (defun trace-line (image-plane y-pos)
