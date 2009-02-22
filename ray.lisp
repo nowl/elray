@@ -70,6 +70,7 @@ the object."
 										(reflectivity exclude-obj)
 										0.0)
 									depth)))
+		  ;;(format t "~a ~a ~a, ~a ~a ~a, ~a ~a ~a ~%" (red reflective-color) (green reflective-color) (blue reflective-color) (red diffuse-color) (green diffuse-color) (blue diffuse-color) (red ambient-color) (green ambient-color) (blue ambient-color))
 		  (let ((final-color (+ reflective-color (+ ambient-color diffuse-color))))
 			;; clamps the final color to the actual max values
 			(let ((red (red final-color))

@@ -1,8 +1,8 @@
 (in-package :elray)
 
 (defparameter *camera*
-  (make-camera :resx 300
-	       :resy 300
+  (make-camera :resx 800
+	       :resy 800
 	       :location (make-vect :x 0.0 :y 2.0 :z 10.0)
 	       :looking-at (make-vect :x 0.0 :y 0.0 :z 0.0)
 	       :up-vector (make-vect :x 0.0 :y 1.0 :z 0.0)
@@ -24,10 +24,10 @@
 					:red 0 :green 200 :blue 200
 					:min-color 0 :max-color 255)
 		  :ambience 0.1
-		  :reflectivity .9)))
+		  :reflectivity .1)))
 
 (defparameter *light* 
-  (list (make-vect :x 100.0 :y 200.0 :z 50.0)
+  (list (make-vect :x 0.0 :y 100.0 :z 25.0)
 	(make-instance 'color :red 255 :green 255 :blue 255
 		       :min-color 0 :max-color 255)))
 
