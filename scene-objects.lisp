@@ -36,3 +36,16 @@
 					:min-color 0 :max-color 255)
 		  :ambience ,ambience
 		  :reflectivity 0.6))
+
+
+(defgeneric scene-obj-norm (obj location)
+  (:documentation "Returns the norm vector of an object based on a passed in location
+vector."))
+
+(defmethod scene-obj-norm ((obj plane) location)
+  (declare (ignore location))
+  (normal obj))
+
+(defmethod scene-obj-norm ((obj sphere) location)
+  (norm-vect (- (center obj) location)))
+  

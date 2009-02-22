@@ -32,6 +32,7 @@ the object."
   ;; components to *final-color*
   (call-next-method)
 
+  ;; clamps the final color to the actual max values
   (let ((red (red *final-color*))
 		(green (green *final-color*))
 		(blue (blue *final-color*)))
@@ -52,52 +53,19 @@ the object."
 (defmethod color-at ((obj scene-object) location)
   ;; ambient color
   (add-final-color-component!
-   (mult-by-scalar (color obj) (ambience obj))))
-
-(defmacro diffuse-color-from-norm (diffuse-amount)
-  "Pass in a form that returns a number between 0 and 1, 1 being the
-directly in line with the light source, 0 being perpendicular. It will
-be evaluating in the context of this macro which handles finding any
-light obstructions and returns the color component from the diffuse
-lighting."
-  (with-gensyms (light-obstructions d)
-    `(let ((,light-obstructions (sendray location (first *light*)
-										 (1- *maximum-reflection-depth*))))
-       (if (not-obstructed-light ,light-obstructions obj)
-		   (let ((,d ,diffuse-amount))
-			 (if (> ,d 0)
-				 (mult-by-scalar (color obj) ,d)
+   (mult-by-scalar (color obj) (ambience obj)))
+  
+  ;; diffuse color
+  (add-final-color-component!
+	(let ((light-obstructions (sendray location (first *light*)
+									   (1- *maximum-reflection-depth*))))
+	  (if (not-obstructed-light light-obstructions obj)
+		  (let* ((v1 (norm-vect (- location (first *light*))))
+				 (d (dot v1 (scene-obj-norm obj location))))
+			 (if (> d 0)
+				 (mult-by-scalar (color obj) d)
 				 *color-black*))
-		   *color-black*))))
-
-(defmethod color-at ((obj sphere) location)
-  ;; diffuse color
-  (add-final-color-component!
-   (diffuse-color-from-norm 
-	(let ((v1 (norm-vect (- location (first *light*))))
-		  (v2 (norm-vect (- (center obj) location))))
-	  (dot v1 v2))))
-
-  (call-next-method))
-
-(defmethod color-at ((obj plane) location)
-  ;; diffuse color
-  (add-final-color-component!
-   (diffuse-color-from-norm
-	(let ((v (norm-vect (- (first *light*) location))))
-	  (dot v (normal obj)))))
-
-  ;; reflective color
-  (add-final-color-component!
-   (let* ((reflection-point (vect-rotate (camera-location *camera*)
-										 (make-vect :x 0.0 :y 1.0 :z 0.0) 180.0 :angle-units :degrees))
-		  (color-reflective (first (ray->color location
-											   reflection-point 
-											   0
-											   :exclude obj))))
-	 (mult-by-scalar color-reflective (reflectivity obj))))
-
-  (call-next-method))
+		  *color-black*))))
 
 (defun get-closest (obj-dist-loc-list &key (exclude nil))
   (let ((closest nil))
@@ -108,21 +76,34 @@ lighting."
 		   (setf closest odl)))
     closest))
 
-(defun ray->color (p1 p2 depth &rest args)
-  (let ((obj-dist-loc (apply #'get-closest (sendray p1 p2 depth) args)))
+(defun reflective-color-at (obj location p1 reflective-factor)
+  *color-black*)
+
+(defun ray->color (p1 p2 exclude-obj depth)
+  ;; get closest object along the path excluding the current object
+  (let ((obj-dist-loc (get-closest (sendray p1 p2 depth) 
+								   :exclude exclude-obj)))
     (if obj-dist-loc
-		(list (color-at (first obj-dist-loc) (third obj-dist-loc))
-			  obj-dist-loc)
-		(list *ambient-background-color* nil))))
+		(let ((diffuse-and-ambient-color 
+			   (color-at (first obj-dist-loc) (third obj-dist-loc)))
+			  (reflective-color
+			   (reflective-color-at (first obj-dist-loc) 
+									(third obj-dist-loc)
+									p1
+									(when exclude-obj
+									  (reflectivity exclude-obj)))))
+		  (+ diffuse-and-ambient-color reflective-color))
+		*ambient-background-color*)))
 
 (defun trace-line (image-plane y-pos)
   (loop for x-image-point below (camera-resx *camera*) do
        (let ()
 		 (declare ((signed-byte 16) y-pos x-image-point))
 		 (let* ((image-point (aref image-plane y-pos x-image-point))
-				(color (first (ray->color (camera-location *camera*)
-										  image-point
-										  (1- *maximum-reflection-depth*)))))
+				(color (ray->color (camera-location *camera*)
+								   image-point
+								   nil
+								   (1- *maximum-reflection-depth*))))
 		   (setf (aref image-plane y-pos x-image-point) color)))))
 
 (defmacro trace-n-lines (image-plane y-pos count)
@@ -144,7 +125,8 @@ lighting."
     (format t "tracing image..~%")
 
     (let (tasks
-		  (lines-at-once 150))
+		  ;;(lines-at-once 150))
+		  (lines-at-once 25))
       #-pcall
       (declare (ignore tasks))
       (loop for y-image-point below (camera-resy *camera*) by lines-at-once do
