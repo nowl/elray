@@ -1,8 +1,8 @@
 (in-package :elray)
 
 (defparameter *camera*
-  (make-camera :resx 200
-	       :resy 200
+  (make-camera :resx 300
+	       :resy 300
 	       :location (make-vect :x 0.0 :y 2.0 :z 10.0)
 	       :looking-at (make-vect :x 0.0 :y 0.0 :z 0.0)
 	       :up-vector (make-vect :x 0.0 :y 1.0 :z 0.0)
