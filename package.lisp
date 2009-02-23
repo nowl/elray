@@ -2,6 +2,6 @@
   (:use :common-lisp 
 	#+pcall
 	:pcall)
-  (:shadow :trace :+ :-)
+  (:shadow :trace :+ :- :position)
   (:export :trace
 	   :trace-to-file))

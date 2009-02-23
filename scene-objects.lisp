@@ -17,19 +17,18 @@
    (ambience     :initarg :ambience                   :reader ambience)
    (reflectivity :initarg :reflectivity :initform 0.0 :reader reflectivity)
    (transparent  :initarg :transparent  :initform nil :reader transparent-p)
-   (ior          :initarg :ior          :initform 0.0 :reader ior)))
+   (ior          :initarg :ior          :initform 0.0 :reader ior)
+   (position     :initarg :position                   :reader position)))
 
 (defclass sphere (scene-object)
-  ((center :initarg :center :reader center)
-   (radius :initarg :radius :reader radius)))
+  ((radius :initarg :radius :reader radius)))
 
 (defclass plane (scene-object)
-  ((position      :initarg :position      :reader pos)
-   (normal-facing :initarg :normal-facing :reader normal)))
+  ((normal-facing :initarg :normal-facing :reader normal)))
 
 (defmacro insert-sphere (x y z rad red green blue ambience)
   `(make-instance 'sphere
-		  :center (make-vect :x ,x :y ,y :z ,z)
+		  :position (make-vect :x ,x :y ,y :z ,z)
 		  :radius ,rad
 		  :color (make-instance 'color 
 					:red ,red :green ,green :blue ,blue
@@ -47,5 +46,4 @@ vector."))
   (normal obj))
 
 (defmethod scene-obj-norm ((obj sphere) location)
-  (norm-vect (- location (center obj))))
-  
+  (norm-vect (- location (position obj))))

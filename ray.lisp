@@ -2,48 +2,35 @@
 
 ;;(declaim (optimize (safety 0) (speed 3)))
 
-(defun sendray (p1 p2 depth)
-  "This should return a list of objects and distances from vect p1 to
-the object."
+(defun sendray (p1 p2 depth &key (exclude nil))
+  "This should return the closest object and the location on that
+object the ray hit."
   (when (> depth *maximum-reflection-depth*)
     nil)
-  (remove-if #'null
-			 (loop for obj in *world* collect
-				  (let ((int (intersect p1 p2 obj)))
-					(when int
-					  (cons obj (intersect p1 p2 obj)))))))
+  (loop for obj in (remove exclude *world*) do
+	   (let ((int (intersect p1 p2 obj)))
+		 (when int
+		   (return-from sendray (values obj int)))))
+  nil)
 
 (defmacro limit (value max)
   `(when (> ,value ,max)
      (setf ,value ,max)))
 
-(defmacro not-obstructed-light (obs-list obj)
-  `(or (null ,obs-list)
-       (and (= (length ,obs-list) 1)
-			(equal (first (first ,obs-list)) ,obj))))
-
 (defun ambient-color (obj)
   (mult-by-scalar (color obj) (ambience obj)))
 
 (defun diffuse-color-at (obj location)
-  (let ((light-obstructions (sendray location (first *light*)
-									 (1- *maximum-reflection-depth*))))
-	(if (not-obstructed-light light-obstructions obj)
+  (let ((light-obstruction (sendray location (first *light*)
+									(1- *maximum-reflection-depth*)
+									:exclude obj)))
+	(if (null light-obstruction)
 		(let* ((v1 (norm-vect (- (first *light*) location)))
 			   (d (dot v1 (scene-obj-norm obj location))))
 		  (if (> d 0)
 			  (mult-by-scalar (color obj) d)
 			  *color-black*))
 		*color-black*)))
-
-(defun get-closest (obj-dist-loc-list &key (exclude nil))
-  (let ((closest nil))
-    (loop for odl in obj-dist-loc-list do
-		 (when (and (or (null closest)
-						(and (second odl) (> (second closest) (second odl))))
-					(not (equal (first odl) exclude)))
-		   (setf closest odl)))
-    closest))
 
 (defun reflective-color-at (obj location p1 reflective-factor current-depth)
   (when (= reflective-factor 0.0)
@@ -57,16 +44,16 @@ the object."
 
 (defun ray->color (p1 p2 exclude-obj depth)
   ;; get closest object along the path excluding the current object
-  (let ((obj-dist-loc (get-closest (sendray p1 p2 depth) 
-								   :exclude exclude-obj)))
-    (if obj-dist-loc
-		(let ((ambient-color (ambient-color (first obj-dist-loc)))
-			  (diffuse-color (diffuse-color-at (first obj-dist-loc) (third obj-dist-loc)))
+  (multiple-value-bind (obj-hit location-hit)
+	  (sendray p1 p2 depth :exclude exclude-obj)
+    (if obj-hit
+		(let ((ambient-color (ambient-color obj-hit))
+			  (diffuse-color (diffuse-color-at obj-hit location-hit))
 			  (reflective-color
-			   (reflective-color-at (first obj-dist-loc) 
-									(third obj-dist-loc)
+			   (reflective-color-at obj-hit
+									location-hit
 									p1
-									(reflectivity (first obj-dist-loc))
+									(reflectivity obj-hit)
 									depth)))
 		  ;;(format t "~a ~a ~a, ~a ~a ~a, ~a ~a ~a ~%" (red reflective-color) (green reflective-color) (blue reflective-color) (red diffuse-color) (green diffuse-color) (blue diffuse-color) (red ambient-color) (green ambient-color) (blue ambient-color))
 		  (let ((final-color (+ reflective-color (+ ambient-color diffuse-color))))
