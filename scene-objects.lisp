@@ -34,7 +34,7 @@
 					:red ,red :green ,green :blue ,blue
 					:min-color 0 :max-color 255)
 		  :ambience ,ambience
-		  :reflectivity 0.5))
+		  :reflectivity 0.9))
 
 
 (defgeneric scene-obj-norm (obj location)

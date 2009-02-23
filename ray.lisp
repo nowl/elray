@@ -10,8 +10,7 @@ object the ray hit."
 	  (loop for obj in (remove exclude *world*) do
 		   (let ((int (intersect p1 p2 obj)))
 			 (when int
-			   (return-from sendray (values obj int))))))
-  nil)
+			   (return (values obj int)))))))
 
 (defmacro limit (value max)
   `(when (> ,value ,max)
@@ -33,20 +32,23 @@ object the ray hit."
 		*color-black*)))
 
 (defun reflective-color-at (obj location p1 reflective-factor current-depth)
-  (when (= reflective-factor 0.0)
-	*color-black*)
-  (let ((reflected-point (vect-rotate p1 
-									  (scene-obj-norm obj location) 
-									  180
-									  :angle-units :degrees)))
-	(mult-by-scalar (ray->color location reflected-point obj (1+ current-depth))
-					reflective-factor)))
-
+  (if (= reflective-factor 0.0)
+	  *color-black*
+	  (let ((reflected-point (vect-rotate p1 
+										  (scene-obj-norm obj location) 
+										  180
+										  :angle-units :degrees)))
+		(mult-by-scalar (ray->color location 
+									reflected-point 
+									obj 
+									(1+ current-depth))
+						reflective-factor))))
+  
 (defun ray->color (p1 p2 exclude-obj depth)
   ;; get closest object along the path excluding the current object
   (multiple-value-bind (obj-hit location-hit)
 	  (sendray p1 p2 depth :exclude exclude-obj)
-    (if obj-hit
+	(if obj-hit
 		(let ((ambient-color (ambient-color obj-hit))
 			  (diffuse-color (diffuse-color-at obj-hit location-hit))
 			  (reflective-color
@@ -80,7 +82,7 @@ object the ray hit."
 				(color (ray->color (camera-location *camera*)
 								   image-point
 								   nil
-								   (1- *maximum-reflection-depth*))))
+								   0)))
 		   (setf (aref image-plane y-pos x-image-point) color)))))
 
 (defmacro trace-n-lines (image-plane y-pos count)
