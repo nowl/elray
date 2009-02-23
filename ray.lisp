@@ -66,9 +66,7 @@ the object."
 			   (reflective-color-at (first obj-dist-loc) 
 									(third obj-dist-loc)
 									p1
-									(if exclude-obj
-										(reflectivity exclude-obj)
-										0.0)
+									(reflectivity (first obj-dist-loc))
 									depth)))
 		  ;;(format t "~a ~a ~a, ~a ~a ~a, ~a ~a ~a ~%" (red reflective-color) (green reflective-color) (blue reflective-color) (red diffuse-color) (green diffuse-color) (blue diffuse-color) (red ambient-color) (green ambient-color) (blue ambient-color))
 		  (let ((final-color (+ reflective-color (+ ambient-color diffuse-color))))
