@@ -5,12 +5,12 @@
 (defun sendray (p1 p2 depth &key (exclude nil))
   "This should return the closest object and the location on that
 object the ray hit."
-  (when (> depth *maximum-reflection-depth*)
-    nil)
-  (loop for obj in (remove exclude *world*) do
-	   (let ((int (intersect p1 p2 obj)))
-		 (when int
-		   (return-from sendray (values obj int)))))
+  (if (>= depth *maximum-reflection-depth*)
+	  nil
+	  (loop for obj in (remove exclude *world*) do
+		   (let ((int (intersect p1 p2 obj)))
+			 (when int
+			   (return-from sendray (values obj int))))))
   nil)
 
 (defmacro limit (value max)

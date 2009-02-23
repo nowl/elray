@@ -18,9 +18,11 @@
    (max-color :initarg :max-color :accessor max-color)))
 
 (defun dot (p1 p2)
-  (+ (* (vect-x p1) (vect-x p2))
-     (* (vect-y p1) (vect-y p2))
-     (* (vect-z p1) (vect-z p2))))
+  (handler-case
+      (+ (* (vect-x p1) (vect-x p2))
+	 (* (vect-y p1) (vect-y p2))
+	 (* (vect-z p1) (vect-z p2)))
+    (floating-point-overflow (c) most-positive-single-float)))
 
 (defun sub-vect (p1 p2)
   (make-vect :x (- (vect-x p1) (vect-x p2))
@@ -80,7 +82,9 @@
 		 :max-color (max-color obj)))
 
 (defun sqr (num)
-  (expt num 2))
+  (handler-case (expt num 2)
+    (floating-point-overflow (c)  most-positive-single-float)))
+
 
 (defun distance (p1 p2)
   (sqrt (+ (sqr (- (vect-x p1)

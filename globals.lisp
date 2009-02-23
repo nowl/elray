@@ -24,7 +24,15 @@
 					:red 0 :green 200 :blue 200
 					:min-color 0 :max-color 255)
 		  :ambience 0.1
-		  :reflectivity 0.1)))
+		  :reflectivity 0.1)
+   (make-instance 'plane
+		  :position (make-vect :x 0.0 :y 0.0 :z -5.0)
+		  :normal-facing (make-vect :x 0.0 :y 0.0 :z 1.0)
+		  :color (make-instance 'color
+					:red 0 :green 200 :blue 200
+					:min-color 0 :max-color 255)
+		  :ambience 0.1
+		  :reflectivity 0.0)))
 
 (defparameter *light* 
   (list (make-vect :x 50.0 :y 100.0 :z 50.0)
@@ -34,7 +42,7 @@
 (defparameter *color-black* (make-instance 'color :red 0 :green 0 :blue 0
 					   :min-color 0 :max-color 255))
 
-(defparameter *maximum-reflection-depth* 10)
+(defparameter *maximum-reflection-depth* 8)
 
 (defparameter *ambient-background-color* 
   (make-instance 'color :red 0 :green 0 :blue 0 
