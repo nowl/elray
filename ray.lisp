@@ -5,12 +5,16 @@
 (defun sendray (p1 p2 depth &key (exclude nil))
   "This should return the closest object and the location on that
 object the ray hit."
-  (if (>= depth *maximum-reflection-depth*)
-	  nil
-	  (loop for obj in (remove exclude *world*) do
-		   (let ((int (intersect p1 p2 obj)))
-			 (when int
-			   (return (values obj int)))))))
+  (cond ((> depth *maximum-reflection-depth*) (values nil nil))
+		(t (let (closest-obj closest-loc closest-dist)
+			 (loop for obj in (remove exclude *world*) do
+				  (multiple-value-bind (int dist) (intersect p1 p2 obj)
+					(when (and int
+							   (or (null closest-dist) (< dist closest-dist)))
+					  (setf closest-obj obj
+							closest-loc int
+							closest-dist dist))))
+			 (values closest-obj closest-loc)))))
 
 (defmacro limit (value max)
   `(when (> ,value ,max)
@@ -20,8 +24,9 @@ object the ray hit."
   (mult-by-scalar (color obj) (ambience obj)))
 
 (defun diffuse-color-at (obj location)
-  (let ((light-obstruction (sendray location (first *light*)
-									(1- *maximum-reflection-depth*)
+  (let ((light-obstruction (sendray location
+									(first *light*)
+									*maximum-reflection-depth*
 									:exclude obj)))
 	(if (null light-obstruction)
 		(let* ((v1 (norm-vect (- (first *light*) location)))
@@ -35,11 +40,12 @@ object the ray hit."
   (if (= reflective-factor 0.0)
 	  *color-black*
 	  (let ((reflected-point (vect-rotate p1 
-										  (scene-obj-norm obj location) 
+										  (norm-vect (+ location 
+														(scene-obj-norm obj location)))
 										  180
 										  :angle-units :degrees)))
-		(mult-by-scalar (ray->color location 
-									reflected-point 
+		(mult-by-scalar (ray->color location
+									reflected-point
 									obj 
 									(1+ current-depth))
 						reflective-factor))))
@@ -104,8 +110,8 @@ object the ray hit."
     (format t "tracing image..~%")
 
     (let (tasks
-		  ;;(lines-at-once 150))
-		  (lines-at-once 25))
+		  (lines-at-once 150))
+		  ;;(lines-at-once 25))
       #-pcall
       (declare (ignore tasks))
       (loop for y-image-point below (camera-resy *camera*) by lines-at-once do

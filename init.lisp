@@ -1,6 +1,6 @@
 (require 'asdf)
 
-;(pushnew :pcall *features*)
+;;(pushnew :pcall *features*)
 
 (asdf:oos 'asdf:load-op 'elray)
 
