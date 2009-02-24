@@ -1,8 +1,8 @@
 (in-package :elray)
 
 (defparameter *camera*
-  (make-camera :resx 400
-	       :resy 400
+  (make-camera :resx 250
+	       :resy 250
 	       :location (make-vect :x 0.0 :y 2.0 :z 10.0)
 	       :looking-at (make-vect :x 0.0 :y 0.0 :z 0.0)
 	       :up-vector (make-vect :x 0.0 :y 1.0 :z 0.0)
@@ -14,7 +14,7 @@
 
 (defparameter *world* 
   (list 
-   (insert-sphere 1.5 1.5 0.0 1.0 0 0 255 0.05)
+   (insert-sphere 1.5 0.5 0.0 1.0 0 0 255 0.05)
    (insert-sphere -1.5 0.0 0.0 1.0 0 255 0 0.05)
    (insert-sphere 0.0 0.0 -1.5 1.0 255 0 0 0.05)
    (make-instance 'plane

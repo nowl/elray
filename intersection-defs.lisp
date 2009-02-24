@@ -21,9 +21,9 @@
 				   (dist1 (distance p1 end1))
 				   (dist2 (distance p1 end2)))
 			  (declare (single-float d1 d2 dist1 dist2))
-			  (if (< dist1 dist2)
-				  (values end1 dist1)
-				  (values end2 dist2))))))))
+			  (cond ((or (< d1 0) (< d2 0)) (values nil nil))
+					((< d1 d2) (values end1 dist1))
+					(t (values end2 dist2)))))))))
 
 (defmethod intersect (p1 p2 (o plane))
   "Equation of a plane is where N dot x = N dot location-on-plane."
