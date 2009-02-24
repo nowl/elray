@@ -32,7 +32,7 @@ object the ray hit."
 		(let* ((v1 (norm-vect (- (first *light*) location)))
 			   (d (dot v1 (scene-obj-norm obj location))))
 		  (if (> d 0)
-			  (mult-by-scalar (color obj) d)
+			  (mult-by-scalar (color obj) (* d (- 1 (ambience obj))))
 			  *color-black*))
 		*color-black*)))
 
