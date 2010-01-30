@@ -1,0 +1,11 @@
+Basic raytracer in Common Lisp
+
+* Introduction
+This is a very simple ray tracer in Common Lisp. It is by no means
+optimized nor feature-complete. It currently works with
+arbitrary-sized spheres and planes.
+
+* Screenshots
+#+BEGIN_HTML
+<img src="test.png" />
+#+END_HTML
