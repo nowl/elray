@@ -1,29 +1,29 @@
 (in-package :elray)
 
 (defparameter *camera*
-  (make-camera :resx 250
-	       :resy 250
-	       :location (make-vect :x 0.0 :y 2.0 :z 10.0)
-	       :looking-at (make-vect :x 0.0 :y 0.0 :z 0.0)
-	       :up-vector (make-vect :x 0.0 :y 1.0 :z 0.0)
-	       :image-dist 7.0
-	       :fov-x-min -2.0
-	       :fov-x-max 2.0
-	       :fov-y-min -2.0
-	       :fov-y-max 2.0))
+  (make-camera :resx 800
+               :resy 800
+               :location (make-vect :x 0.0 :y 2.0 :z 10.0)
+               :looking-at (make-vect :x 0.0 :y 0.0 :z 0.0)
+               :up-vector (make-vect :x 0.0 :y 1.0 :z 0.0)
+               :image-dist 7.0
+               :fov-x-min -2.0
+               :fov-x-max 2.0
+               :fov-y-min -2.0
+               :fov-y-max 2.0))
 
 (defparameter *world* 
   (list 
-   (insert-sphere 1.5 0.5 0.0 1.0 0 0 255 0.05)
-   (insert-sphere -1.5 0.0 0.0 1.0 0 255 0 0.05)
-   (insert-sphere 0.0 0.0 -1.5 1.0 255 0 0 0.05)
+   (insert-sphere 2.5 0.0 -0.2 1.2 (0 0 0) (0 0 255) (0 0 0) 0.3)
+   (insert-sphere -2.5 0.0 -0.2 1.2 (0 0 0) (0 255 0) (0 0 0) 0.3)
+   (insert-sphere 0.0 0.0 -1.5 1.5 (0 0 0) (255 0 0) (0 0 0) 0.9)
+   (insert-sphere 0.0 -0.5 3.5 0.75 (0 0 0) (255 0 255) (0 0 0) 0.3)
    (make-instance 'plane
 		  :position (make-vect :x 0.0 :y -1.5 :z 0.0)
 		  :normal-facing (make-vect :x 0.0 :y 1.0 :z 0.0)
-		  :color (make-instance 'color
-					:red 0 :green 200 :blue 200
-					:min-color 0 :max-color 255)
-		  :ambience 0.1
+		  :ambient (std-color 0 0 0)
+          :diffuse (std-color 0 200 200)
+          :specular (std-color 0 0 0)
 		  :reflectivity 0.0)))
 
 (defparameter *light* 

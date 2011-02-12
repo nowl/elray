@@ -1,0 +1,4 @@
+time sbcl --load init.lisp --eval "(quit)"
+
+rev: 66258cb2
+user	0m40.501s
