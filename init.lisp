@@ -1,6 +1,8 @@
 (require 'asdf)
 
-;;(pushnew :pcall *features*)
+;(pushnew :pcall *features*)
+;(load "~/quicklisp/setup.lisp")
+;(ql:quickload "pcall")
 
 (asdf:oos 'asdf:load-op 'elray)
 

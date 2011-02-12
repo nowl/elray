@@ -115,13 +115,12 @@ object the ray hit."
 
     (let (tasks
 		  (lines-at-once 150))
-		  ;;(lines-at-once 25))
       #-pcall
       (declare (ignore tasks))
       (loop for y-image-point below (camera-resy *camera*) by lines-at-once do
 		   #+pcall
 		   (let ((y-pos y-image-point))
-			 (push (pexec (trace-n-lines image-plane y-pos lines-at-once)) tasks))
+			 (push (pexec (trace-n-lines image-plane image-plane-info y-pos lines-at-once)) tasks))
 		   #-pcall
 		   (prog1
 			   (trace-n-lines image-plane image-plane-info y-image-point lines-at-once)
