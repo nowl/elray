@@ -38,3 +38,83 @@
 		(when (> time 0)
 		  (let ((end (get-vect-at-time line time)))
 			(values end (distance p1 end))))))))
+
+
+;; intersection with axis aligned bounding box (AABB)
+(defconstant +dir-threshold+ 0.00001)
+
+(defun line-min-max-axis-intersect (pos dir min max tmin tmax)
+  (declare (single-float pos dir min max tmin tmax))
+
+  ;; first check if perpendicular to axis (dir approx. 0)
+  (when (< (abs dir) +dir-threshold+)
+    (if (and (> pos min) (< pos max))
+        ;; inside
+        (return-from line-min-max-axis-intersect
+          (values t tmin tmax))
+        ;; outside
+        (return-from line-min-max-axis-intersect
+          (values nil nil nil))))
+
+  ;; find times to intersect min and max
+  (let ((t1 (/ (- min pos) dir))
+        (t2 (/ (- max pos) dir)))
+
+    ;; sort times
+    (when (> t1 t2)
+      (psetf t1 t2 t2 t1))
+    
+    ;; check for no intersection
+    (when (or (> t1 tmax) (< t2 tmin))
+      (return-from line-min-max-axis-intersect
+        (values nil nil nil)))
+   
+    ;; return time subset
+    (return-from line-min-max-axis-intersect
+      (values t
+              (if (> t1 tmin) t1 tmin)
+              (if (< t2 tmax) t2 tmax)))))
+
+
+
+(defun line-aabb-intersect (line-pos line-dir line-length 
+                            box-min-x box-max-x 
+                            box-min-y box-max-y
+                            box-min-z box-max-z)
+  (macrolet ((test (axis-accessor min max)
+               `(multiple-value-bind (intersect min max)
+                    (line-min-max-axis-intersect (,axis-accessor line-pos)
+                                                 (,axis-accessor line-dir)
+                                                 ,min ,max tmin tmax)
+                  (if (null intersect)
+                      (return-from line-aabb-intersect nil)
+                      (setf tmin min tmax max)))))
+    
+    (let ((tmin 0.0) (tmax line-length))
+      
+      ;; test x axis
+      (test vect-x box-min-x box-max-x)
+      ;; test y axis with new tmin and tmax
+      (test vect-y box-min-y box-max-y)
+      ;; test z axis with new tmin and tmax
+      (test vect-z box-min-z box-max-z)
+   
+      ;; if we've made it here that means the line does intersect the
+      ;; aabb if tmax is greater than tmin
+      (if (< tmax tmin)
+          nil
+          t))))
+
+(defmethod intersect (p1 p2 (o bounded-volume))
+  (let ((line (make-line-from-vects p1 p2)))
+    (let* ((slope (line-slope line))
+           (x0 (line-offset line))
+           ;; assuming normalized slope
+           (length (dot slope (- p2 p1))))
+      (line-aabb-intersect x0 slope length
+                           (bounded-volume-min-x o)
+                           (bounded-volume-max-x o)
+                           (bounded-volume-min-y o)
+                           (bounded-volume-max-y o)
+                           (bounded-volume-min-z o)
+                           (bounded-volume-max-z o)))))

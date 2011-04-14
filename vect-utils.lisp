@@ -92,8 +92,8 @@
 
 (defun norm (p)
   (sqrt (+ (sqr (vect-x p))
-	   (sqr (vect-y p))
-	   (sqr (vect-z p)))))
+           (sqr (vect-y p))
+           (sqr (vect-z p)))))
 
 (defun norm-vect (p)
   (let ((n (norm p)))
@@ -104,7 +104,7 @@
 
 (defun make-line-from-vects (p1 p2)
   (make-line :slope (norm-vect (sub-vect p2 p1))
-	     :offset p1))
+             :offset p1))
 (defun get-vect-at-time (line time)
   (+ (mult-by-scalar (line-slope line) time)
      (line-offset line)))

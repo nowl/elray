@@ -22,7 +22,7 @@
    (position     :initarg :position                   :reader position)))
 
 (defclass sphere (scene-object)
-  ((radius :initarg :radius :reader radius)))
+  ((radius :initarg :radius :reader radius :type single-float)))
 
 (defclass plane (scene-object)
   ((normal-facing :initarg :normal-facing :reader normal)))
