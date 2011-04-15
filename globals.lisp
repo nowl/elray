@@ -1,8 +1,8 @@
 (in-package :elray)
 
 (defparameter *camera*
-  (make-camera :resx 800
-               :resy 800
+  (make-camera :resx 300
+               :resy 300
                :location (make-vect :x 0.0 :y 2.0 :z 10.0)
                :looking-at (make-vect :x 0.0 :y 0.0 :z 0.0)
                :up-vector (make-vect :x 0.0 :y 1.0 :z 0.0)
@@ -12,6 +12,7 @@
                :fov-y-min -2.0
                :fov-y-max 2.0))
 
+#|
 (defparameter *world* 
   (list 
    (insert-sphere 2.5 0.0 -0.2 1.2 (0 0 0) (0 0 255) (0 0 0) 0.3)
@@ -25,6 +26,28 @@
           :diffuse (std-color 0 200 200)
           :specular (std-color 0 0 0)
 		  :reflectivity 0.0)))
+|#
+
+(defparameter *world*
+  (append
+   (loop for count below 50 collect
+        (let* ((r (random 256))
+               (g (random 256))
+               (b (random 256))
+               (angle (/ (* 6 3.14159 count) 50))
+               (rad (- 2 (* 2 (/ count 50.0))))
+               (x (* rad (sin angle)))
+               (z (* rad (cos angle)))
+               (y (- (/ count 12.0) 1.5)))
+          (insert-sphere x y z 0.2 (0 0 0) (r g b) (0 0 0) 0.05)))
+   (list
+    (make-instance 'plane
+                   :position (make-vect :x 0.0 :y -1.5 :z 0.0)
+                   :normal-facing (make-vect :x 0.0 :y 1.0 :z 0.0)
+                   :ambient (std-color 0 0 0)
+                   :diffuse (std-color 0 200 200)
+                   :specular (std-color 0 0 0)
+                   :reflectivity 0.0))))
 
 (defparameter *light* 
   (list (make-vect :x 100.0 :y 100.0 :z 100.0)

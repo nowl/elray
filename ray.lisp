@@ -106,8 +106,8 @@ object the ray hit."
         (image-plane-info (make-image-plane *camera*))
 		(last-percent 0))
 
-    #+pcall
-    (setf (thread-pool-size) 4)
+    ;;#+pcall
+    (setf (pcall:thread-pool-size) 4)
 
     ;; trace the rays
 
@@ -120,7 +120,7 @@ object the ray hit."
       (loop for y-image-point below (camera-resy *camera*) by lines-at-once do
 		   #+pcall
 		   (let ((y-pos y-image-point))
-			 (push (pexec (trace-n-lines image-plane image-plane-info y-pos lines-at-once)) tasks))
+			 (push (pcall:pexec (trace-n-lines image-plane image-plane-info y-pos lines-at-once)) tasks))
 		   #-pcall
 		   (prog1
 			   (trace-n-lines image-plane image-plane-info y-image-point lines-at-once)
@@ -131,7 +131,7 @@ object the ray hit."
       #+pcall
       (loop for task in tasks
 		 for n below (length tasks) do
-		   (join task)
+		   (pcall:join task)
 		   (dump-percentage last-percent 
 							n
 							(length tasks) 5)))
