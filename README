@@ -11,5 +11,11 @@ to execute render lines in parallel on SMP systems. For instance, I
 was able to obtain almost a 3x speedup on my quad-core system when
 using Pcall.
 
-Look under "test-renders" for some example images that have been
-produced with this software.
+Here are some links to some test renders:
+
+A base scene demonstrating some large spheres and reflections:
+http://dl.dropbox.com/u/26389837/images/elray/basic%20reflective%20render.png
+
+A more complicated scene with 1000 reflective spheres taking advantage
+of the bounding volume hierarchy optimization:
+http://dl.dropbox.com/u/26389837/images/elray/messy%20reflective%20spheres.png
