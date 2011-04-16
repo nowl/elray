@@ -12,8 +12,7 @@
                :fov-y-min -2.0
                :fov-y-max 2.0))
 
-#|
-(defparameter *world* 
+(defparameter *basic-world* 
   (list 
    (insert-sphere 2.5 0.0 -0.2 1.2 (0 0 0) (0 0 255) (0 0 0) 0.3)
    (insert-sphere -2.5 0.0 -0.2 1.2 (0 0 0) (0 255 0) (0 0 0) 0.3)
@@ -26,13 +25,12 @@
           :diffuse (std-color 0 200 200)
           :specular (std-color 0 0 0)
 		  :reflectivity 0.0)))
-|#
 
 (defparameter *bvh-world* nil
   "Bounding volume hierarchy representation of the world. This is
   created on trace initialization.")
 
-(defparameter *world*
+(defparameter *spiral-world*
   (append
    (loop for count below 50 collect
         (let* ((r (random 256))
@@ -52,6 +50,29 @@
                    :diffuse (std-color 0 200 200)
                    :specular (std-color 0 0 0)
                    :reflectivity 0.0))))
+
+(defparameter *random-circles-world*
+  (append
+   (loop for count below 1000 collect
+        (let* ((r (random 256))
+               (g (random 256))
+               (b (random 256))
+               (x (- (* (random 1.0) 5) 2.5))
+               (z (- (* (random 1.0) 5) 2.5))
+               (y (- (* (random 1.0) 5) 2.5))
+               (rad (+ (random 0.15) 0.03)))
+          (insert-sphere x y z rad (0 0 0) (r g b) (0 0 0) 0.5)))
+   (list
+    (make-instance 'plane
+                   :position (make-vect :x 0.0 :y -1.5 :z 0.0)
+                   :normal-facing (make-vect :x 0.0 :y 1.0 :z 0.0)
+                   :ambient (std-color 0 0 0)
+                   :diffuse (std-color 0 200 200)
+                   :specular (std-color 0 0 0)
+                   :reflectivity 0.0))))
+
+
+(defparameter *world* *random-circles-world*)
 
 (defparameter *light* 
   (list (make-vect :x 100.0 :y 100.0 :z 100.0)
