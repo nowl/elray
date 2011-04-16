@@ -1,15 +1,12 @@
-Elray is a Common Lisp ray-tracer developed on SBCL. Currently Elray
-aims to be a research project and not an optimized full-purpose
-ray-tracer.
+Elray is a single-precision Common Lisp ray-tracer developed on
+SBCL. Currently Elray aims to be a toy research project and not an
+optimized full-purpose ray-tracer although there are various
+optimizations such as multithreaded rendering and automated bounding
+volume hierarchies.
 
 At this point there are essentially spheres and planes that can be
 rendered with ambient and diffuse lighting with a given reflectivity
 as a material property assigned to an object.
-
-There are some optimizations such as the reliance on Pcall
-to execute render lines in parallel on SMP systems. For instance, I
-was able to obtain almost a 3x speedup on my quad-core system when
-using Pcall.
 
 Here are some links to some test renders:
 
