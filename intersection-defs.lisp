@@ -105,12 +105,15 @@
           nil
           t))))
 
+;; assume a given start point and an infinite end point - this is the
+;; case with a cast ray
+(defconstant +max-ray-length+ 1e6)
 (defmethod intersect (p1 p2 (o bounded-volume))
   (let ((line (make-line-from-vects p1 p2)))
     (let* ((slope (line-slope line))
            (x0 (line-offset line))
-           ;; assuming normalized slope
-           (length (dot slope (- p2 p1))))
+           ;;(length (dot slope (- p2 p1)))
+           (length +max-ray-length+))
       (line-aabb-intersect x0 slope length
                            (bounded-volume-min-x o)
                            (bounded-volume-max-x o)

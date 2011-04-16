@@ -1,8 +1,8 @@
 (in-package :elray)
 
 (defparameter *camera*
-  (make-camera :resx 300
-               :resy 300
+  (make-camera :resx 800
+               :resy 800
                :location (make-vect :x 0.0 :y 2.0 :z 10.0)
                :looking-at (make-vect :x 0.0 :y 0.0 :z 0.0)
                :up-vector (make-vect :x 0.0 :y 1.0 :z 0.0)
@@ -27,6 +27,10 @@
           :specular (std-color 0 0 0)
 		  :reflectivity 0.0)))
 |#
+
+(defparameter *bvh-world* nil
+  "Bounding volume hierarchy representation of the world. This is
+  created on trace initialization.")
 
 (defparameter *world*
   (append

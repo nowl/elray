@@ -21,11 +21,13 @@
      :min-z (- (vect-z position) radius)
      :max-z (+ (vect-z position) radius))))
 
+(defconstant +world-limit+ 10000.0)
+
 (defmethod bounded-volume ((o plane))
   (make-bounded-volume
-   :min-x most-negative-single-float
-   :max-x most-positive-single-float
-   :min-y most-negative-single-float
-   :max-y most-positive-single-float
-   :min-z most-negative-single-float
-   :max-z most-positive-single-float))
+   :min-x (cl:- +world-limit+)
+   :max-x +world-limit+
+   :min-y (cl:- +world-limit+)
+   :max-y +world-limit+
+   :min-z (cl:- +world-limit+)
+   :max-z +world-limit+))

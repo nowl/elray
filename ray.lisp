@@ -6,8 +6,11 @@
   "This should return the closest object and the location on that
 object the ray hit."
   (cond ((> depth *maximum-reflection-depth*) (values nil nil))
-		(t (let (closest-obj closest-loc closest-dist)
-			 (loop for obj in (remove exclude *world*) do
+		(t (let (closest-obj 
+                 closest-loc
+                 closest-dist
+                 (reduced-list (bvh-reduce-to-list p1 p2 *bvh-world*)))
+             (loop for obj in (remove exclude reduced-list) do
 				  (multiple-value-bind (int dist) (intersect p1 p2 obj)
 					(when (and int
 							   (or (null closest-dist) (< dist closest-dist)))
@@ -108,6 +111,11 @@ object the ray hit."
 
     ;;#+pcall
     (setf (pcall:thread-pool-size) 4)
+
+    ;; build bounding volume heirarchy
+
+    (format t "building bounding volume hierarchy..~%")
+    (setf *bvh-world* (bvh *world*))
 
     ;; trace the rays
 

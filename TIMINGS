@@ -2,3 +2,21 @@ time sbcl --load init.lisp --eval "(quit)"
 
 rev: 66258cb2
 user	0m40.501s
+
+;; run with 800x800 spiral without bvh
+179.966 seconds of real time
+  370.819155 seconds of total run time (359.959863 user, 10.859292 system)
+  [ Run times consist of 55.056 seconds GC time, and 315.764 seconds non-GC time. ]
+  206.05% CPU
+  90 lambdas converted
+  432,346,026,420 processor cycles
+  65,691,747,168 bytes consed
+
+;; run with 800x800 spiral with bvh
+30.112 seconds of real time
+  59.582781 seconds of total run time (57.676239 user, 1.906542 system)
+  [ Run times consist of 8.195 seconds GC time, and 51.388 seconds non-GC time. ]
+  197.87% CPU
+  90 lambdas converted
+  72,341,016,165 processor cycles
+  9,722,233,928 bytes consed
